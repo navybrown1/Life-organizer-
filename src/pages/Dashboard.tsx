@@ -2,9 +2,10 @@ import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Award, CalendarDays, CheckSquare, Clock, Target, ArrowRight, Loader2, Sparkles, Zap } from "lucide-react";
+import { Award, CalendarDays, CheckSquare, Clock, Target, ArrowRight, Loader2, Sparkles, Zap, type LucideIcon } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import { useNavigate } from "react-router";
+import type { ReactNode } from "react";
 
 const priorityColors = {
   low: "border-blue-200 bg-blue-50/80 text-blue-700",
@@ -100,7 +101,7 @@ export default function Dashboard() {
               </div>
             ))
           ) : (
-            <EmptyState icon={CheckSquare} title="Clear runway" text="No tasks due today. That is not laziness, that is tactical breathing room." />
+            <EmptyState icon={CheckSquare} title="Clear runway" text="No tasks due today. That is tactical breathing room." />
           )}
         </PremiumPanel>
 
@@ -166,9 +167,9 @@ export default function Dashboard() {
   );
 }
 
-function PremiumPanel({ title, action, icon: Icon, onAction, children }: { title: string; action: string; icon: typeof CheckSquare; onAction: () => void; children: React.ReactNode }) {
+function PremiumPanel({ title, action, icon: Icon, onAction, children }: { title: string; action: string; icon: LucideIcon; onAction: () => void; children: ReactNode }) {
   return (
-    <Card className="hover-lift min-h-[320px] border-white/70 bg-white/82">
+    <Card className="hover-lift min-h-[320px] border-white/70 bg-white/80">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="gradient-primary flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg shadow-primary/25">
@@ -185,7 +186,7 @@ function PremiumPanel({ title, action, icon: Icon, onAction, children }: { title
   );
 }
 
-function EmptyState({ icon: Icon, title, text }: { icon: typeof CheckSquare; title: string; text: string }) {
+function EmptyState({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-primary/25 bg-primary/5 px-6 py-10 text-center">
       <div className="gradient-primary mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-glow">
