@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
+import { previewHabitLogs, previewHabits, previewMutationResult } from "./previewData";
 import {
   findHabitsByUser,
   createHabit,
@@ -12,7 +13,9 @@ import {
 } from "./queries/habits";
 
 export const habitRouter = createRouter({
-  list: authedQuery.query(({ ctx }) => findHabitsByUser(ctx.user.id)),
+  list: authedQuery.query(({ ctx }) =>
+    ctx.previewMode ? previewHabits : findHabitsByUser(ctx.user.id),
+  ),
   create: authedQuery
     .input(
       z.object({
@@ -23,7 +26,9 @@ export const habitRouter = createRouter({
         color: z.string().optional(),
       }),
     )
-    .mutation(({ ctx, input }) => createHabit({ ...input, userId: ctx.user.id })),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : createHabit({ ...input, userId: ctx.user.id }),
+    ),
   update: authedQuery
     .input(
       z.object({
@@ -37,13 +42,19 @@ export const habitRouter = createRouter({
         bestStreak: z.number().optional(),
       }),
     )
-    .mutation(({ input }) => updateHabit(input.id, input)),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : updateHabit(input.id, input),
+    ),
   delete: authedQuery
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteHabit(input.id)),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : deleteHabit(input.id),
+    ),
   logs: authedQuery
     .input(z.object({ habitId: z.number() }))
-    .query(({ input }) => findHabitLogs(input.habitId)),
+    .query(({ ctx, input }) =>
+      ctx.previewMode ? previewHabitLogs : findHabitLogs(input.habitId),
+    ),
   log: authedQuery
     .input(
       z.object({
@@ -53,11 +64,21 @@ export const habitRouter = createRouter({
         note: z.string().optional(),
       }),
     )
-    .mutation(({ input }) => logHabit({ ...input, logDate: new Date(input.logDate) })),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode
+        ? previewMutationResult
+        : logHabit({ ...input, logDate: new Date(input.logDate) }),
+    ),
   unlog: authedQuery
     .input(z.object({ habitId: z.number(), date: z.string() }))
-    .mutation(({ input }) => unlogHabit(input.habitId, new Date(input.date))),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : unlogHabit(input.habitId, new Date(input.date)),
+    ),
   todayLog: authedQuery
     .input(z.object({ habitId: z.number(), date: z.string() }))
-    .query(({ input }) => findHabitLogsForDate(input.habitId, new Date(input.date))),
+    .query(({ ctx, input }) =>
+      ctx.previewMode
+        ? previewHabitLogs.filter((log) => log.habitId === input.habitId)
+        : findHabitLogsForDate(input.habitId, new Date(input.date)),
+    ),
 });
