@@ -32,7 +32,7 @@ import {
   PanelLeft,
   Zap,
 } from "lucide-react";
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AuthLayoutSkeleton } from "./AuthLayoutSkeleton";
 import { Button } from "./ui/button";
@@ -48,11 +48,9 @@ const menuItems = [
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
-const MIN_WIDTH = 220;
-const MAX_WIDTH = 480;
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
+  const [sidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
@@ -89,136 +87,93 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
-      <AuthLayoutContent setSidebarWidth={setSidebarWidth}>{children}</AuthLayoutContent>
+      <AuthLayoutContent>{children}</AuthLayoutContent>
     </SidebarProvider>
   );
 }
 
-type AuthLayoutContentProps = {
-  children: ReactNode;
-  setSidebarWidth: (width: number) => void;
-};
-
-function AuthLayoutContent({ children, setSidebarWidth }: AuthLayoutContentProps) {
+function AuthLayoutContent({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location.pathname);
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (isCollapsed) setIsResizing(false);
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
-      const newWidth = e.clientX - sidebarLeft;
-      if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => setIsResizing(false);
-
-    if (isResizing) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [isResizing, setSidebarWidth]);
-
   return (
     <>
-      <div className="relative" ref={sidebarRef}>
-        <Sidebar collapsible="icon" className="border-r-0 bg-transparent">
-          <SidebarHeader className="h-20 justify-center p-3">
-            <div className="glass-card flex w-full items-center gap-3 rounded-2xl px-3 py-3 transition-all">
-              <button
-                onClick={toggleSidebar}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Toggle navigation"
-              >
-                <PanelLeft className="h-4 w-4 text-primary" />
-              </button>
-              {!isCollapsed ? (
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="gradient-primary flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg shadow-primary/25">
-                    <Zap className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="block truncate font-black tracking-tight text-gradient">Life Organizer</span>
-                    <span className="block truncate text-xs font-semibold text-muted-foreground">Command center</span>
-                  </div>
+      <Sidebar collapsible="icon" className="border-r-0 bg-transparent p-3">
+        <SidebarHeader className="h-20 justify-center p-0">
+          <div className="glass-card flex w-full items-center gap-3 rounded-2xl px-3 py-3 transition-all">
+            <button
+              onClick={toggleSidebar}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Toggle navigation"
+            >
+              <PanelLeft className="h-4 w-4 text-primary" />
+            </button>
+            {!isCollapsed ? (
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="gradient-primary flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg shadow-primary/25">
+                  <Zap className="h-4 w-4" />
                 </div>
-              ) : null}
-            </div>
-          </SidebarHeader>
+                <div className="min-w-0">
+                  <span className="block truncate font-black tracking-tight text-gradient">Life Organizer</span>
+                  <span className="block truncate text-xs font-semibold text-muted-foreground">Command center</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </SidebarHeader>
 
-          <SidebarContent className="gap-0 px-2">
-            <SidebarMenu className="space-y-1 rounded-2xl p-2">
-              {menuItems.map(item => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => navigate(item.path)}
-                      tooltip={item.label}
-                      className={`h-11 rounded-xl font-semibold transition-all ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-primary/5"}`}
-                    >
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarContent>
+        <SidebarContent className="gap-0 px-0 py-3">
+          <SidebarMenu className="space-y-1 rounded-2xl p-0">
+            {menuItems.map(item => {
+              const isActive = location.pathname === item.path;
+              return (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton
+                    isActive={isActive}
+                    onClick={() => navigate(item.path)}
+                    tooltip={item.label}
+                    className={`h-11 rounded-xl font-semibold transition-all ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-primary/5"}`}
+                  >
+                    <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarContent>
 
-          <SidebarFooter className="p-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="glass-card flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all hover:shadow-soft group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-10 w-10 shrink-0 border border-primary/20 shadow-sm">
-                    <AvatarFallback className="gradient-primary text-xs font-black text-white">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                    <p className="truncate text-sm font-bold leading-none">{user?.name || "Preview User"}</p>
-                    <p className="mt-1.5 truncate text-xs text-muted-foreground">{user?.email || "preview mode"}</p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarFooter>
-        </Sidebar>
-        <div
-          className={`absolute right-0 top-0 h-full w-1 cursor-col-resize transition-colors hover:bg-primary/20 ${isCollapsed ? "hidden" : ""}`}
-          onMouseDown={() => { if (!isCollapsed) setIsResizing(true); }}
-          style={{ zIndex: 50 }}
-        />
-      </div>
+        <SidebarFooter className="p-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="glass-card flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all hover:shadow-soft group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Avatar className="h-10 w-10 shrink-0 border border-primary/20 shadow-sm">
+                  <AvatarFallback className="gradient-primary text-xs font-black text-white">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                  <p className="truncate text-sm font-bold leading-none">{user?.name || "Preview User"}</p>
+                  <p className="mt-1.5 truncate text-xs text-muted-foreground">{user?.email || "preview mode"}</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+              <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SidebarFooter>
+      </Sidebar>
 
-      <SidebarInset className="bg-transparent">
+      <SidebarInset className="min-w-0 bg-transparent">
         {isMobile && (
           <div className="glass sticky top-0 z-40 flex h-16 items-center justify-between border-b px-3 backdrop-blur-xl">
             <div className="flex items-center gap-2">
@@ -227,7 +182,7 @@ function AuthLayoutContent({ children, setSidebarWidth }: AuthLayoutContentProps
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</main>
       </SidebarInset>
     </>
   );
