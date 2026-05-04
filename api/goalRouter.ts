@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
+import { previewGoals, previewMutationResult } from "./previewData";
 import {
   findGoalsByUser,
   findActiveGoals,
@@ -9,8 +10,12 @@ import {
 } from "./queries/goals";
 
 export const goalRouter = createRouter({
-  list: authedQuery.query(({ ctx }) => findGoalsByUser(ctx.user.id)),
-  active: authedQuery.query(({ ctx }) => findActiveGoals(ctx.user.id)),
+  list: authedQuery.query(({ ctx }) =>
+    ctx.previewMode ? previewGoals : findGoalsByUser(ctx.user.id),
+  ),
+  active: authedQuery.query(({ ctx }) =>
+    ctx.previewMode ? previewGoals : findActiveGoals(ctx.user.id),
+  ),
   create: authedQuery
     .input(
       z.object({
@@ -21,11 +26,13 @@ export const goalRouter = createRouter({
       }),
     )
     .mutation(({ ctx, input }) =>
-      createGoal({
-        ...input,
-        targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
-        userId: ctx.user.id,
-      }),
+      ctx.previewMode
+        ? previewMutationResult
+        : createGoal({
+            ...input,
+            targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
+            userId: ctx.user.id,
+          }),
     ),
   update: authedQuery
     .input(
@@ -40,13 +47,17 @@ export const goalRouter = createRouter({
         completedAt: z.date().optional(),
       }),
     )
-    .mutation(({ input }) =>
-      updateGoal(input.id, {
-        ...input,
-        targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
-      }),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode
+        ? previewMutationResult
+        : updateGoal(input.id, {
+            ...input,
+            targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
+          }),
     ),
   delete: authedQuery
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteGoal(input.id)),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : deleteGoal(input.id),
+    ),
 });
