@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
+import { previewMutationResult, previewNotes } from "./previewData";
 import {
   findNotesByUser,
   createNote,
@@ -8,7 +9,9 @@ import {
 } from "./queries/notes";
 
 export const noteRouter = createRouter({
-  list: authedQuery.query(({ ctx }) => findNotesByUser(ctx.user.id)),
+  list: authedQuery.query(({ ctx }) =>
+    ctx.previewMode ? previewNotes : findNotesByUser(ctx.user.id),
+  ),
   create: authedQuery
     .input(
       z.object({
@@ -18,7 +21,9 @@ export const noteRouter = createRouter({
         pinned: z.boolean().optional(),
       }),
     )
-    .mutation(({ ctx, input }) => createNote({ ...input, userId: ctx.user.id })),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : createNote({ ...input, userId: ctx.user.id }),
+    ),
   update: authedQuery
     .input(
       z.object({
@@ -29,8 +34,12 @@ export const noteRouter = createRouter({
         pinned: z.boolean().optional(),
       }),
     )
-    .mutation(({ input }) => updateNote(input.id, input)),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : updateNote(input.id, input),
+    ),
   delete: authedQuery
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteNote(input.id)),
+    .mutation(({ ctx, input }) =>
+      ctx.previewMode ? previewMutationResult : deleteNote(input.id),
+    ),
 });
