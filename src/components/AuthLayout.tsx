@@ -34,7 +34,7 @@ const menuItems = [
 ];
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  const { isLoading, user } = useAuth();
+  const { isLoading, user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -110,7 +110,7 @@ function AppSidebar({
   locationPath,
   navigate,
 }: {
-  user: { name?: string | null; email?: string | null } | undefined;
+  user: { name?: string | null; email?: string | null } | null;
   logout: () => void;
   locationPath: string;
   navigate: (path: string) => void;
