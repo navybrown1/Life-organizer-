@@ -1,7 +1,6 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { User } from "@db/schema";
 import { env } from "./lib/env";
-import { authenticateRequest } from "./kimi/auth";
 import { previewUser } from "./previewData";
 
 export type TrpcContext = {
@@ -26,6 +25,7 @@ export async function createContext(
   }
 
   try {
+    const { authenticateRequest } = await import("./kimi/auth");
     ctx.user = await authenticateRequest(opts.req.headers);
   } catch {
     // Authentication is optional here
